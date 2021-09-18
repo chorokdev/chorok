@@ -18,7 +18,7 @@ body:
       required: true
   - type: textarea
     id: how-to-reproduce
-      attributes:
-        label: 어떻게 재현할 수 있나요?
-        description: 무엇을 해야 해당 버그가 발생하는지 알려주세요
+    attributes:
+      label: 어떻게 재현할 수 있나요?
+      description: 무엇을 해야 해당 버그가 발생하는지 알려주세요
     
