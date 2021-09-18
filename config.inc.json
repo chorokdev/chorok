@@ -1,0 +1,28 @@
+{
+  "production": {
+    "tokens": {
+      "discord": "",
+      "koreanlist": ""
+    },
+    "node": [
+      {
+        "host": "discodo",
+        "port": 8000,
+        "password": "hellodiscodo"
+      }
+    ]
+  },
+  "test": {
+    "tokens": {
+      "discord": "",
+      "koreanlist": ""
+    },
+    "node": [
+      {
+        "host": "localhost",
+        "port": 8000,
+        "password": "hellodiscodo"
+      }
+    ]
+  }
+}
