@@ -97,7 +97,7 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
                         ])
     async def _skip(self,
                     ctx: dico_inter.InteractionContext,
-                    offset: Optional[int] = 1) -> None:
+                    offset: int = 1) -> None:
         vc: discodo.VoiceClient = self.bot.audio.get_vc(ctx.guild_id)
 
         await vc.skip(offset)

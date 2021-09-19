@@ -3,7 +3,7 @@ def create_invite_link(bot_id: str, permissions: int) -> str:
            f"?client_id={bot_id}&permissions={permissions}&scope=bot%20applications.commands"
 
 
-def make_progress_bar(value, total) -> str:
+def make_progress_bar(value: float, total: float) -> str:
     position_front = round(value / total * 16)
     position_back = 16 - position_front
 
@@ -11,7 +11,6 @@ def make_progress_bar(value, total) -> str:
 
 
 def duration_format(seconds: int) -> str:
-    seconds = int(seconds)
     minute, second = divmod(seconds, 60)
     hour, minute = divmod(minute, 60)
 
