@@ -2,27 +2,27 @@
   "production": {
     "tokens": {
       "discord": "",
-      "koreanlist": ""
+      "koreanbots": ""
     },
-    "node": [
+    "nodes": [
       {
         "host": "discodo",
         "port": 8000,
         "password": "hellodiscodo"
       }
-    ]
+    ],
+    "slash_command_guild": null
   },
   "test": {
     "tokens": {
       "discord": "",
-      "koreanlist": ""
+      "koreanbots": ""
     },
     "node": [
       {
-        "host": "localhost",
-        "port": 8000,
-        "password": "hellodiscodo"
+        "local": true
       }
-    ]
+    ],
+    "slash_command_guild": "123456789012345678"
   }
 }
