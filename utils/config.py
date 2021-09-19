@@ -9,6 +9,7 @@ class Config:
     mode: str
     token: dict[str, Any]
     node: list[dict[str, Any]]
+    slash_command_guild: Optional[str]
 
 
 def load(filename: str, mode: str) -> Optional[Config]:
