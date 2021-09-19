@@ -40,8 +40,7 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
                                              storage_type="channel")
         await channel.send(embed=dico.Embed(
             title="현재 재생중",
-            description=
-            f"[{data['source']['title']}]({data['source']['webpage_url']})",
+            description=f"[{data['source']['title']}]({data['source']['webpage_url']})",
             color=Colors.default))
 
     @dico_inter.command(name="join", description="음성 채널에 입장합니다.")
@@ -51,8 +50,7 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
         await self.connect_voice(ctx.author.user.voice_state.channel,
                                  ctx.channel_id)
         await ctx.send(embed=dico.Embed(
-            description=
-            f"{ctx.author.user.voice_state.channel.mention}에 입장했습니다.",
+            description=f"{ctx.author.user.voice_state.channel.mention}에 입장했습니다.",
             color=Colors.information))
 
     @dico_inter.command(name="play",
@@ -78,8 +76,7 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
         if isinstance(data, list):
             embed = dico.Embed(
                 title="대기열에 추가되었습니다.",
-                description=
-                f"[{data[0].title}]({data[0].webpage_url}) 외 {len(data) - 1}개",
+                description=f"[{data[0].title}]({data[0].webpage_url}) 외 {len(data) - 1}개",
                 color=Colors.default)
         else:
             embed = dico.Embed(
@@ -105,8 +102,7 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
 
         await vc.skip(offset)
         await ctx.send(embed=dico.Embed(
-            description=
-            f"성공적으로{f' {offset}개의' if offset > 1 else ''} 곡을 스킵했습니다.",
+            description=f"성공적으로{f' {offset}개의' if offset > 1 else ''} 곡을 스킵했습니다.",
             color=Colors.information))
 
     @dico_inter.command(name="stop", description="대기열을 초기화하고 음성 채널에서 나갑니다.")
