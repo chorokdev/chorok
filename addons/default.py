@@ -1,8 +1,10 @@
 import dico  # noqa
 import dico_command
 import dico_interaction as dico_inter
+import psutil
+from humanize import naturalsize
 
-import utils.formatter
+import utils
 from models import ChorokBot, Colors
 
 
@@ -15,7 +17,24 @@ def unload(bot: ChorokBot) -> None:
 
 
 class Default(dico_command.Addon):  # type: ignore[call-arg, misc]
+    bot: ChorokBot
     name = "기본"
+
+    @dico_inter.command(name="information", description="봇의 정보를 확인합니다.")
+    async def _information(self, ctx: dico_inter.InteractionContext) -> None:
+        embed = dico.Embed(title="정보", color=Colors.information)
+        embed.add_field(
+            name="봇",
+            value=f"{len(self.bot.audio.voice_clients)}/{self.bot.guild_count} (노래를 재생중인 서버/총 서버)"
+        )
+
+        memory = psutil.virtual_memory()
+        embed.add_field(
+            name="서버",
+            value=f"CPU: {psutil.cpu_percent()}%\n"
+            f"RAM: {naturalsize(memory.used)}/{naturalsize(memory.total)}",
+            inline=False)
+        await ctx.send(embed=embed)
 
     @dico_inter.command(name="ping", description="봇의 명령어 응답 속도를 확인합니다.")
     async def _ping(self, ctx: dico_inter.InteractionContext) -> None:
@@ -27,8 +46,8 @@ class Default(dico_command.Addon):  # type: ignore[call-arg, misc]
     @dico_inter.command(name="invite", description="봇의 초대 링크를 보냅니다.")
     async def _invite(self, ctx: dico_inter.InteractionContext) -> None:
         await ctx.send(embed=dico.Embed(
-            title="초록 초대하기",
-            description=f"[여기를 눌러]({utils.formatter.create_invite_link(self.bot.application_id, 28624960)})"
+            title="초대하기",
+            description=f"[여기를 눌러]({utils.formatter.create_invite_link(str(self.bot.application_id), 28624960)})"
             f" 초록을 초대하실 수 있습니다.",
             color=Colors.information))
 
