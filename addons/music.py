@@ -160,7 +160,7 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
                 f" **{chapter['title']}**\n" if chapter else "")
             progress_bar = (
                 f"{utils.formatter.make_progress_bar(vc.position, vc.duration)}\n"
-                + f"`{utils.formatter.duration_format(vc.position)}/"
+                f"`{utils.formatter.duration_format(vc.position)}/"
                 f"{utils.formatter.duration_format(vc.duration)}`"
                 if not vc.current.is_live else "`🔴LIVE`")
             embed = dico.Embed(
