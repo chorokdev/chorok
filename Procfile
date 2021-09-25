@@ -1,1 +1,1 @@
-worker: python3 main.py kikibox
+worker: python3 main.py production
