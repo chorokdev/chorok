@@ -42,9 +42,9 @@
     },
     "node": [
       {
-        "host": "localhost",
-        "port": 8000,
-        "password": "hellodiscodo"
+        "host": "simsimler.me",
+        "port": 8080,
+        "password": "kikibox"
       }
     ],
     "slash_command_guild": "457841749197586438",
