@@ -4,7 +4,7 @@
       "discord": "",
       "koreanbots": ""
     },
-    "nodes": [
+    "node": [
       {
         "host": "discodo",
         "port": 8000,
