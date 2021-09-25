@@ -25,8 +25,9 @@ class KoreanbotsClient:
                 headers={"Authorization": self.token},
                 json={
                     "servers": self.client.guild_count,
-                    "shards": self.client.shard_count
-                }) as resp:
+                    "shards": self.client.shard_count,
+                },
+        ) as resp:
             resp.raise_for_status()
 
     def post_guilds_automatically(self) -> None:

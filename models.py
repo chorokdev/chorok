@@ -11,13 +11,16 @@ import dico.utils  # noqa
 import dico_command
 import dico_interaction as dico_inter
 from dico_command import Bot
+from dico_interaction.exception import CheckFailed
 from rich.logging import RichHandler
 
 import utils
 
-logging.basicConfig(level=logging.INFO,
-                    handlers=[RichHandler(rich_tracebacks=True)],
-                    format="%(name)s :\t%(message)s")
+logging.basicConfig(
+    level=logging.INFO,
+    handlers=[RichHandler(rich_tracebacks=True)],
+    format="%(name)s :\t%(message)s",
+)
 
 
 class Colors(enum.IntEnum):
@@ -44,9 +47,11 @@ class ChorokBot(Bot):  # type: ignore[call-arg, misc]
                  for key in ("host", "port", "password"))):
                 self.audio.register_node()
                 break
-            self.audio.register_node(host=node_conf["host"],
-                                     port=node_conf["port"],
-                                     password=node_conf["password"])
+            self.audio.register_node(
+                host=node_conf["host"],
+                port=node_conf["port"],
+                password=node_conf["password"],
+            )
 
         self.on_("ready", self._ready_handler)
         self.on_("interaction_error", self._interaction_error_handler)
@@ -75,6 +80,8 @@ class ChorokBot(Bot):  # type: ignore[call-arg, misc]
             error: Exception) -> None:
         if not ctx.deferred:
             await ctx.defer()
+        if isinstance(error, CheckFailed):
+            return
 
         tb: str = "".join(
             traceback.format_exception(type(error), error,
@@ -89,4 +96,5 @@ class ChorokBot(Bot):  # type: ignore[call-arg, misc]
                 itertools.chain.from_iterable(
                     [[inter.command for inter in addon.interactions]
                      for addon in self.addons])),
-            guild=self.config.slash_command_guild)
+            guild=self.config.slash_command_guild,
+        )

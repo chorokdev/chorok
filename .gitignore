@@ -130,5 +130,5 @@ dmypy.json
 
 .idea/
 
-config.json
+#config.json
 discodo-config.json

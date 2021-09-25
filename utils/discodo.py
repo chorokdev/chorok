@@ -7,11 +7,8 @@ from typing import Any, Optional, Union
 
 import dico  # noqa
 import discodo  # noqa
-from discodo import (
-    EventDispatcher,
-    NodeNotConnected,
-    Nodes,  # noqa
-    VoiceClientNotFound)
+from discodo import Nodes  # noqa
+from discodo import EventDispatcher, NodeNotConnected, VoiceClientNotFound  # noqa
 from discodo.client.node import Node, launchLocalNode  # noqa
 
 
@@ -45,9 +42,12 @@ class DicoClient:
         self.nodes = Nodes()
 
         self.client.on_("raw", self.discord_dispatch)
+        self.client.on_("guild_delete", self.guild_dispatch)
 
     def __repr__(self) -> str:
-        return f"<DicoClient Nodes={self.nodes} voiceClients={len(self.voice_clients)}>"
+        return (
+            f"<DicoClient Nodes={self.nodes} voice_clients={len(self.voice_clients)}>"
+        )
 
     @property
     def event(self):  # type: ignore
@@ -75,6 +75,10 @@ class DicoClient:
                 return_when="ALL_COMPLETED",
             )
 
+    async def guild_dispatch(self, guild: dico.Guild) -> None:
+        if guild.id in self.voice_clients.keys():
+            del self.voice_clients[int(guild.id)]
+
     def register_node(
         self,
         host: Optional[str] = None,
@@ -90,9 +94,14 @@ class DicoClient:
         return self.loop.create_task(
             self.connect_node(host, port, password, region, launch_options))
 
-    async def connect_node(self, host: Optional[str], port: Optional[int],
-                           password: Optional[str], region: Optional[str],
-                           launch_options: dict[str, Any]) -> None:
+    async def connect_node(
+        self,
+        host: Optional[str],
+        port: Optional[int],
+        password: Optional[str],
+        region: Optional[str],
+        launch_options: dict[str, Any],
+    ) -> None:
         await self.client.wait_ready()
 
         if not host or not port:

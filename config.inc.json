@@ -11,7 +11,11 @@
         "password": "hellodiscodo"
       }
     ],
-    "slash_command_guild": null
+    "slash_command_guild": null,
+    "cache": {
+      "host": "redis",
+      "port": 6579
+    }
   },
   "test": {
     "tokens": {
@@ -23,6 +27,10 @@
         "local": true
       }
     ],
-    "slash_command_guild": "123456789012345678"
+    "slash_command_guild": "123456789012345678",
+    "cache": {
+      "host": "localhost",
+      "port": 6579
+    }
   }
 }

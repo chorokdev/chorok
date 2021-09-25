@@ -12,12 +12,16 @@ Rewrite with [dico](https://github.com/dico-api/dico)
     "node": [
       {
         "local": false, // true if you are going to use local node
-        "host": "discodo", // Host of node
+        "host": "chorok-node", // Host of node
         "port": 8000, // Port of node
         "password": "hellodiscodo" // Password of node
       }
     ],
-    "slash_command_guild": null // null: global, string: that guild only
+    "slash_command_guild": null, // null: global, string: that guild only
+    "cache": {
+      "host": "chorok-cache", // Host of redis server
+      "port": 6579 // Port of redis server
+    }
   }
 }
 ```

@@ -1,0 +1,13 @@
+python3-dev
+libopus-dev
+libnacl-dev
+
+pkg-config
+
+libavcodec-dev
+libavdevice-dev
+libavfilter-dev
+libavformat-dev
+libavutil-dev
+libswresample-dev
+libswscale-dev
