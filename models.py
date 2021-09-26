@@ -40,6 +40,7 @@ class ChorokBot(Bot):  # type: ignore[call-arg, misc]
         self.audio = utils.discodo.DicoClient(self)
         self.koreanbots = utils.koreanbots.KoreanbotsClient(
             self, k_token := config.token["koreanbots"], bool(k_token))
+        self.redis_cache = utils.cache.CacheClient(**config.cache)
 
         for node_conf in self.config.node:
             if node_conf.get("local", False) or not any(
@@ -78,15 +79,16 @@ class ChorokBot(Bot):  # type: ignore[call-arg, misc]
     async def _interaction_error_handler(  # noqa
             self, ctx: dico_inter.InteractionContext,
             error: Exception) -> None:
-        if not ctx.deferred:
-            await ctx.defer()
         if isinstance(error, CheckFailed):
             return
 
         tb: str = "".join(
             traceback.format_exception(type(error), error,
                                        error.__traceback__))
+        tb = ("..." + tb[-1997:]) if len(tb) > 2000 else tb
         with contextlib.suppress(Exception):
+            if not ctx.deferred:
+                await ctx.defer()
             await ctx.send("```py\n" + tb + "\n```")
         raise error
 
