@@ -8,7 +8,10 @@ from typing import Any, Optional, Union
 import dico  # noqa
 import discodo  # noqa
 from discodo import Nodes  # noqa
-from discodo import EventDispatcher, NodeNotConnected, VoiceClientNotFound  # noqa
+from discodo import (  # noqa
+    EventDispatcher,
+    NodeNotConnected,
+    VoiceClientNotFound)
 from discodo.client.node import Node, launchLocalNode  # noqa
 
 
