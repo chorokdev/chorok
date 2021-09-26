@@ -1,11 +1,11 @@
+import asyncio
+from typing import Optional
+
 import dico  # noqa
 import dico_command
 import dico_interaction as dico_inter
-
-try:
-    import meval  # noqa
-except ImportError:
-    meval = None
+from dp.pager import Pager
+from dp.pyeval import PYEval
 
 from models import ChorokBot
 
@@ -16,6 +16,28 @@ def load(bot: ChorokBot) -> None:
 
 def unload(bot: ChorokBot) -> None:
     bot.unload_addons(Owner)
+
+
+async def delete_wait(bot: ChorokBot,
+                      ctx: dico_inter.InteractionContext,
+                      content: Optional[str] = None,
+                      embed: Optional[dico.Embed] = None) -> None:
+    delete_button = dico.Button(style=dico.ButtonStyles.DANGER,
+                                emoji="🗑️",
+                                custom_id="trash")
+    delete_button.custom_id += str(ctx.id)
+    await ctx.send(content,
+                   embed=embed,
+                   components=[dico.ActionRow(delete_button)])
+    try:
+        inter: dico.Interaction = await bot.wait(
+            "interaction_create",
+            check=lambda i: int(i.author) == int(ctx.author.user.id) and i.
+            data.custom_id == delete_button.custom_id,
+            timeout=60)
+        await inter.message.delete()
+    except asyncio.TimeoutError:
+        return
 
 
 class Owner(dico_command.Addon):  # type: ignore[call-arg, misc]
@@ -39,10 +61,32 @@ class Owner(dico_command.Addon):  # type: ignore[call-arg, misc]
                         ).owner_ids):
             await ctx.send("이 명령어는 애플리케이션의 오너만 사용할 수 있습니다.", ephemeral=True)
             return
-        if not meval:
-            await ctx.send("eval을 사용하기 위해선 meval 모듈을 설치해야 합니다.",
-                           ephemeral=True)
-            return
-
-        result = await meval.meval(code, globals(), ctx=ctx, bot=self.bot)
-        await ctx.send(str(result), ephemeral=True)
+        ev = PYEval(ctx, self.bot, code)
+        delete_button = dico.Button(style=dico.ButtonStyles.DANGER,
+                                    emoji="🗑️",
+                                    custom_id="trash")
+        resp = await ev.evaluate()
+        str_resp = [f"Result {i}:\n{x}" for i, x in enumerate(resp, start=1)
+                    ] if len(resp) > 1 else [*map(str, resp)]
+        pages = []
+        for x in str_resp:
+            if len(x) > 2000:
+                while len(x) > 2000:
+                    pages.append(x[:2000])
+                    x = x[2000:]
+                pages.append(x)
+            else:
+                pages.append(x)
+        if len(pages) == 1:
+            return await delete_wait(self.bot, ctx, content=str(pages[0]))
+        # TODO: fix message
+        pager = Pager(self.bot,
+                      self.bot.get(ctx.channel_id, storage_type="channel"),
+                      ctx.author,
+                      pages,
+                      reply=ctx.message,
+                      extra_button=delete_button,
+                      timeout=60)
+        async for _ in pager.start():
+            await pager.message.delete()
+            break
