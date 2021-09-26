@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y pkg-config ffmp
 RUN git config --global credential.helper store
 
 COPY . .
+RUN mv config.inc.json config.json
 RUN python3 -m pip install -U pip && python3 -m pip install -r requirements.txt
 
-CMD ["python3", "main.py"]
+CMD ["python3", "main.py", "production"]
