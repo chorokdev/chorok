@@ -8,7 +8,7 @@ import discodo  # noqa
 from discodo.client.models import AudioData, AudioSource  # noqa
 
 from models import ChorokBot, Colors
-from utils.formatter import duration_format, make_progress_bar, create_page
+from utils.formatter import create_page, duration_format, make_progress_bar
 
 
 def load(bot: ChorokBot) -> None:
@@ -36,8 +36,9 @@ def on_voice_channel(ctx: dico_inter.InteractionContext) -> bool:
 
 
 def on_playing(ctx: dico_inter.InteractionContext) -> bool:
-    vc: discodo.VoiceClient = ctx.client.audio.get_vc(ctx.guild_id,  # noqa
-                                                      safe=True)
+    vc: discodo.VoiceClient = ctx.client.audio.get_vc(  # noqa
+        ctx.guild_id,
+        safe=True)
     ctx.client.loop.create_task(vc.getCurrent())  # noqa
 
     if not vc or not vc.current:
@@ -48,7 +49,17 @@ def on_playing(ctx: dico_inter.InteractionContext) -> bool:
 
 
 def on_same_voice_channel(ctx: dico_inter.InteractionContext) -> bool:
-    vc: ctx.client.audio.get_vc(ctx.guild_id, safe=True)
+    vc: discodo.VoiceClient = ctx.client.audio.get_vc(ctx.guild_id, safe=True)  # noqa
+    if not vc or not ctx.author.user.voice_state:
+        return True
+
+    if vc.channel_id == ctx.author.user.voice_state.channel_id:
+        return True
+
+    ctx.client.loop.create_task( # noqa
+        ctx.send(f"이 명령어는 <#{vc.channel_id}> 채널에서만 사용하실 수 있습니다.", ephemeral=True)
+    )
+    return False
 
 
 class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
@@ -117,7 +128,7 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
                 "검색할 내용이나 링크", True)
         ],
     )
-    @dico_inter.deco.checks(on_voice_channel)
+    @dico_inter.deco.checks(on_voice_channel, on_same_voice_channel)
     async def _play(self, ctx: dico_inter.InteractionContext,
                     query: str) -> None:
         await ctx.defer()
@@ -148,7 +159,7 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
 
     @dico_inter.command(name="재생하기",
                         command_type=dico.ApplicationCommandTypes.MESSAGE)
-    @dico_inter.deco.checks(on_voice_channel)
+    @dico_inter.deco.checks(on_voice_channel, on_same_voice_channel)
     async def _play_context_menu(self,
                                  ctx: dico_inter.InteractionContext) -> None:
         await ctx.defer()
@@ -193,7 +204,7 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
             )
         ],
     )
-    @dico_inter.deco.checks(on_voice_channel, on_playing)
+    @dico_inter.deco.checks(on_voice_channel, on_playing, on_same_voice_channel)
     async def _skip(self,
                     ctx: dico_inter.InteractionContext,
                     offset: int = 1) -> None:
@@ -224,7 +235,7 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
             )
         ],
     )
-    @dico_inter.deco.checks(on_voice_channel, on_playing)
+    @dico_inter.deco.checks(on_voice_channel, on_playing, on_same_voice_channel)
     async def _volume(self,
                       ctx: dico_inter.InteractionContext,
                       percent: Optional[int] = None) -> None:
@@ -245,7 +256,7 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
         ))
 
     @dico_inter.command(name="nowplaying", description="현재 재생중인 노래를 확인합니다")
-    @dico_inter.deco.checks(on_voice_channel)
+    @dico_inter.deco.checks(on_playing)
     async def _nowplaying(self, ctx: dico_inter.InteractionContext) -> None:
         vc: discodo.VoiceClient = self.bot.audio.get_vc(ctx.guild_id)
 
@@ -281,7 +292,7 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
         await ctx.send(embed=embed)
 
     @dico_inter.command(name="queue", description="서버의 대기열을 확인합니다.")
-    @dico_inter.deco.checks(on_voice_channel)
+    @dico_inter.deco.checks(on_playing)
     async def _queue(self, ctx: dico_inter.InteractionContext) -> None:
         vc: discodo.VoiceClient = self.bot.audio.get_vc(ctx.guild_id)
 
@@ -307,7 +318,7 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
         await ctx.send(embeds=embeds)
 
     @dico_inter.command(name="autoplay", description="자동 재생을 켜거나 끕니다.")
-    @dico_inter.deco.checks(on_voice_channel, on_playing)
+    @dico_inter.deco.checks(on_voice_channel, on_playing, on_same_voice_channel)
     async def _autoplay(self, ctx: dico_inter.InteractionContext) -> None:
         vc: discodo.VoiceClient = self.bot.audio.get_vc(ctx.guild_id)
 
@@ -319,7 +330,7 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
         ))
 
     @dico_inter.command(name="pause", description="노래를 일시정지합니다.")
-    @dico_inter.deco.checks(on_voice_channel, on_playing)
+    @dico_inter.deco.checks(on_voice_channel, on_playing, on_same_voice_channel)
     async def _pause(self, ctx: dico_inter.InteractionContext) -> None:
         vc: discodo.VoiceClient = self.bot.audio.get_vc(ctx.guild_id)
 
@@ -329,7 +340,7 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
                                         color=Colors.information))
 
     @dico_inter.command(name="resume", description="노래를 다시 재생합니다.")
-    @dico_inter.deco.checks(on_voice_channel)
+    @dico_inter.deco.checks(on_voice_channel, on_same_voice_channel)
     async def _resume(self, ctx: dico_inter.InteractionContext) -> None:
         vc: discodo.VoiceClient = self.bot.audio.get_vc(ctx.guild_id)
 
