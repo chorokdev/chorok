@@ -3,15 +3,13 @@ Based on https://github.com/kijk2869/discodo/blob/master/discodo/client/DPYClien
 """
 import asyncio
 import itertools
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import dico  # noqa
 import discodo  # noqa
 from discodo import Nodes  # noqa
 from discodo import (  # noqa
-    EventDispatcher,
-    NodeNotConnected,
-    VoiceClientNotFound)
+    EventDispatcher, NodeNotConnected, VoiceClientNotFound)
 from discodo.client.node import Node, launchLocalNode  # noqa
 
 
@@ -78,7 +76,7 @@ class DicoClient:
                 return_when="ALL_COMPLETED",
             )
 
-    async def guild_dispatch(self, guild: dico.Guild) -> None:
+    async def guild_dispatch(self, guild: dico.Guild.TYPING) -> None:
         if guild.id in self.voice_clients.keys():
             del self.voice_clients[int(guild.id)]
 
@@ -165,7 +163,7 @@ class DicoClient:
                 ])))
 
     def get_vc(self,
-               guild: Union[dico.Guild, dico.Snowflake, int],
+               guild: dico.Guild.TYPING,
                safe: bool = False) -> Optional[discodo.VoiceClient]:
 
         if isinstance(guild, dico.Guild):
@@ -178,7 +176,7 @@ class DicoClient:
 
     async def connect(
             self,
-            channel: dico.Channel,
+            channel: dico.Channel.TYPING,
             node: Optional[NodeClient] = None) -> discodo.VoiceClient:
         if not hasattr(channel, "guild"):
             raise ValueError
