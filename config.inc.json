@@ -14,7 +14,7 @@
     "slash_command_guild": null,
     "cache": {
       "host": "redis",
-      "port": 6579
+      "port": 6379
     }
   },
   "test": {
@@ -30,7 +30,7 @@
     "slash_command_guild": "123456789012345678",
     "cache": {
       "host": "localhost",
-      "port": 6579
+      "port": 6379
     }
   }
 }

@@ -20,7 +20,7 @@ Rewrite with [dico](https://github.com/dico-api/dico)
     "slash_command_guild": null, // null: global, string: that guild only
     "cache": {
       "host": "chorok-cache", // Host of redis server
-      "port": 6579 // Port of redis server
+      "port": 6379 // Port of redis server
     }
   }
 }
