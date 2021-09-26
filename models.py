@@ -10,6 +10,7 @@ import dico  # noqa
 import dico.utils  # noqa
 import dico_command
 import dico_interaction as dico_inter
+import discodo  # noqa
 from dico_command import Bot
 from dico_interaction.exception import CheckFailed
 from rich.logging import RichHandler
@@ -91,6 +92,12 @@ class ChorokBot(Bot):  # type: ignore[call-arg, misc]
                 await ctx.defer()
             await ctx.send("```py\n" + tb + "\n```")
         raise error
+
+    async def _voice_state_update_handler(self, vs: dico.VoiceState) -> None:
+        vc: discodo.VoiceClient = self.audio.get_vc(vs.guild_id, safe=True)
+
+        if not vc:
+            return
 
     async def register_slash_commands(self) -> None:
         await self.bulk_overwrite_application_commands(
