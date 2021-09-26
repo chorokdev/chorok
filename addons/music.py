@@ -1,3 +1,4 @@
+import asyncio
 import contextlib
 from typing import Any, Optional, Union
 
@@ -36,9 +37,7 @@ def on_voice_channel(ctx: dico_inter.InteractionContext) -> bool:
 
 
 def on_playing(ctx: dico_inter.InteractionContext) -> bool:
-    vc: discodo.VoiceClient = ctx.client.audio.get_vc(  # noqa
-        ctx.guild_id,
-        safe=True)
+    vc: discodo.VoiceClient = ctx.client.audio.get_vc(ctx.guild_id, safe=True)  # noqa
     ctx.client.loop.create_task(vc.getCurrent())  # noqa
 
     if not vc or not vc.current:
@@ -56,9 +55,9 @@ def on_same_voice_channel(ctx: dico_inter.InteractionContext) -> bool:
     if vc.channel_id == ctx.author.user.voice_state.channel_id:
         return True
 
-    ctx.client.loop.create_task( # noqa
-        ctx.send(f"이 명령어는 <#{vc.channel_id}> 채널에서만 사용하실 수 있습니다.", ephemeral=True)
-    )
+    ctx.client.loop.create_task(  # noqa
+        ctx.send(f"이 명령어는 <#{vc.channel_id}> 채널에서만 사용하실 수 있습니다.",
+                 ephemeral=True))
     return False
 
 
@@ -97,16 +96,6 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
         voice.context["lastMessage"] = int(message.id)
         await voice.setContext(voice.context)
 
-    def set_requester(self, vc: discodo.VoiceClient,
-                      requester: dico.Snowflake) -> None:
-        async def async_callback() -> None:
-            await self.bot.audio.dispatcher.wait_for(
-                "SOURCE_START", lambda v, d: v.guild_id == vc.guild_id)
-            await (await
-                   vc.getCurrent()).setContext({"requester": int(requester)})
-
-        self.bot.loop.create_task(async_callback())
-
     @dico_inter.command(name="join", description="음성 채널에 입장합니다.")
     @dico_inter.deco.checks(on_voice_channel)
     async def _join(self, ctx: dico_inter.InteractionContext) -> None:
@@ -144,16 +133,15 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
         if isinstance(data, list):
             embed = dico.Embed(
                 title="대기열에 추가되었습니다.",
-                description=f"[{data[0].title}]({data[0].webpage_url}) 외 {len(data) - 1}개",
+                description=f"[{data[0].title}]({data[0].webpage_url}) 외 {len(data) - 1}개 - {ctx.author.user.mention}",
                 color=Colors.default,
             )
         else:
             embed = dico.Embed(
                 title="대기열에 추가되었습니다.",
-                description=f"[{data.title}]({data.webpage_url})",
+                description=f"[{data.title}]({data.webpage_url}) - {ctx.author.user.mention}",
                 color=Colors.default,
             )
-        self.set_requester(vc, ctx.author.user.id)
 
         await ctx.send(embed=embed)
 
@@ -177,20 +165,128 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
         if isinstance(data, list):
             embed = dico.Embed(
                 title="대기열에 추가되었습니다.",
-                description=f"[{data[0].title}]({data[0].webpage_url}) 외 {len(data) - 1}개",
+                description=f"[{data[0].title}]({data[0].webpage_url}) 외 {len(data) - 1}개 - {ctx.author.user.mention}",
                 color=Colors.default,
             )
-            for _ in data:
-                self.set_requester(vc, ctx.author.user.id)
         else:
             embed = dico.Embed(
                 title="대기열에 추가되었습니다.",
-                description=f"[{data.title}]({data.webpage_url})",
+                description=f"[{data.title}]({data.webpage_url}) - {ctx.author.user.mention}",
                 color=Colors.default,
             )
-            self.set_requester(vc, ctx.author.user.id)
 
         await ctx.send(embed=embed)
+
+    @dico_inter.command(
+        name="search",
+        description="노래를 검색 및 재생합니다.",
+        options=[
+            dico.ApplicationCommandOption(
+                dico.ApplicationCommandOptionType.STRING, "query", "검색할 내용",
+                True)
+        ],
+    )
+    @dico_inter.deco.checks(on_voice_channel, on_same_voice_channel)
+    async def _search(self, ctx: dico_inter.InteractionContext,
+                      query: str) -> None:
+        await ctx.defer(ephemeral=True)
+
+        vc: discodo.VoiceClient = self.bot.audio.get_vc(ctx.guild_id,
+                                                        safe=True)
+        if not vc:
+            vc = await self.connect_voice(ctx.author.user.voice_state.channel,
+                                          ctx.channel_id)
+
+        data: list[AudioData] = await vc.searchSources(query)
+        data_select = dico.SelectMenu(
+            custom_id=f"{ctx.guild_id}_{ctx.author.user.id}",
+            options=[
+                dico.SelectOption(label=source.title,
+                                  value=str(index),
+                                  description=source.uploader)
+                for index, source in enumerate(data)
+            ])
+
+        await ctx.send("30초 안에 선택하지 않을 경우 취소됩니다.",
+                       ephemeral=True,
+                       components=[dico.ActionRow(data_select)])
+        try:
+            inter: dico.Interaction = await self.bot.wait(
+                "interaction_create",
+                check=lambda i: int(i.author) == int(ctx.author.user.id) and i.
+                data.custom_id == data_select.custom_id,
+                timeout=30)
+            await vc.putSource(data[int(inter.data.values[0])])
+            await inter.message.channel.send(embed=dico.Embed(
+                title="대기열에 추가되었습니다.",
+                description=f"[{data[int(inter.data.values[0])].title}]({data[int(inter.data.values[0])].webpage_url})"
+                f" - {ctx.author.user.mention}",
+                color=Colors.default,
+            ))
+            data_select.disabled = True
+
+            await inter.create_response(
+                dico.InteractionResponse(
+                    dico.InteractionCallbackType.UPDATE_MESSAGE,
+                    dico.InteractionApplicationCommandCallbackData(
+                        content="선택되었습니다.",
+                        components=[dico.ActionRow(data_select)])))
+        except asyncio.TimeoutError:
+            await (await
+                   ctx.request_original_response()).edit(content="취소되었습니다.",
+                                                         components=None)
+
+    @dico_inter.command(name="검색하기",
+                        command_type=dico.ApplicationCommandTypes.MESSAGE)
+    @dico_inter.deco.checks(on_voice_channel, on_same_voice_channel)
+    async def _search_context_menu(self,
+                                   ctx: dico_inter.InteractionContext) -> None:
+        await ctx.defer(ephemeral=True)
+
+        vc: discodo.VoiceClient = self.bot.audio.get_vc(ctx.guild_id,
+                                                        safe=True)
+        if not vc:
+            vc = await self.connect_voice(ctx.author.user.voice_state.channel,
+                                          ctx.channel_id)
+
+        data: list[AudioData] = await vc.searchSources(ctx.target.content)
+        data_select = dico.SelectMenu(
+            custom_id=f"{ctx.guild_id}_{ctx.author.user.id}",
+            options=[
+                dico.SelectOption(label=source.title,
+                                  value=str(index),
+                                  description=source.uploader)
+                for index, source in enumerate(data)
+            ])
+
+        await ctx.send("30초 안에 선택하지 않을 경우 취소됩니다.",
+                       ephemeral=True,
+                       components=[dico.ActionRow(data_select)])
+        try:
+            inter: dico.Interaction = await self.bot.wait(
+                "interaction_create",
+                check=lambda i: int(i.author) == int(ctx.author.user.id) and i.
+                data.custom_id == data_select.custom_id,
+                timeout=30)
+            await vc.putSource(data[int(inter.data.values[0])])
+            await inter.message.channel.send(embed=dico.Embed(
+                title="대기열에 추가되었습니다.",
+                description=f"[{data[int(inter.data.values[0])].title}]({data[int(inter.data.values[0])].webpage_url})"
+                f" - {ctx.author.user.mention}",
+                color=Colors.default,
+            ))
+            data_select.disabled = True
+
+            await inter.create_response(
+                dico.InteractionResponse(
+                    dico.InteractionCallbackType.UPDATE_MESSAGE,
+                    dico.InteractionApplicationCommandCallbackData(
+                        content="선택되었습니다.",
+                        components=[dico.ActionRow(data_select)])))
+        except asyncio.TimeoutError:
+            await (await
+                   ctx.request_original_response()).edit(content="취소되었습니다.",
+                                                         components=None)
 
     @dico_inter.command(
         name="skip",
@@ -204,7 +300,8 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
             )
         ],
     )
-    @dico_inter.deco.checks(on_voice_channel, on_playing, on_same_voice_channel)
+    @dico_inter.deco.checks(on_voice_channel, on_playing,
+                            on_same_voice_channel)
     async def _skip(self,
                     ctx: dico_inter.InteractionContext,
                     offset: int = 1) -> None:
@@ -235,7 +332,8 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
             )
         ],
     )
-    @dico_inter.deco.checks(on_voice_channel, on_playing, on_same_voice_channel)
+    @dico_inter.deco.checks(on_voice_channel, on_playing,
+                            on_same_voice_channel)
     async def _volume(self,
                       ctx: dico_inter.InteractionContext,
                       percent: Optional[int] = None) -> None:
@@ -282,7 +380,7 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
             embed = dico.Embed(
                 title=f"{vc.current.title}",
                 url=f"{vc.current.webpage_url}&t={int(vc.current.position)}",
-                description=f"**요청**: <@{vc.current.context['requester']}>{chapter_str}\n{progress_bar}",
+                description=f"{chapter_str}\n{progress_bar}",
                 color=Colors.information,
             )
             embed.set_author(name="현재 재생 중인 노래")
@@ -318,7 +416,8 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
         await ctx.send(embeds=embeds)
 
     @dico_inter.command(name="autoplay", description="자동 재생을 켜거나 끕니다.")
-    @dico_inter.deco.checks(on_voice_channel, on_playing, on_same_voice_channel)
+    @dico_inter.deco.checks(on_voice_channel, on_playing,
+                            on_same_voice_channel)
     async def _autoplay(self, ctx: dico_inter.InteractionContext) -> None:
         vc: discodo.VoiceClient = self.bot.audio.get_vc(ctx.guild_id)
 
@@ -330,7 +429,8 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
         ))
 
     @dico_inter.command(name="pause", description="노래를 일시정지합니다.")
-    @dico_inter.deco.checks(on_voice_channel, on_playing, on_same_voice_channel)
+    @dico_inter.deco.checks(on_voice_channel, on_playing,
+                            on_same_voice_channel)
     async def _pause(self, ctx: dico_inter.InteractionContext) -> None:
         vc: discodo.VoiceClient = self.bot.audio.get_vc(ctx.guild_id)
 
