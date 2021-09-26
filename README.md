@@ -5,7 +5,7 @@ Rewrite with [dico](https://github.com/dico-api/dico)
 ```json5
 {
   "mode_name": { // You can run with `python3 main.py <mode_name>`
-    "tokens": {
+    "token": {
       "discord": "",
       "koreanbots": "" // Blank if you aren't going to use koreanbots
     },

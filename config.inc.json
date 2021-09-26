@@ -1,6 +1,6 @@
 {
   "production": {
-    "tokens": {
+    "token": {
       "discord": "",
       "koreanbots": ""
     },
@@ -18,7 +18,7 @@
     }
   },
   "test": {
-    "tokens": {
+    "token": {
       "discord": "",
       "koreanbots": ""
     },
