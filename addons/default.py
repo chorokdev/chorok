@@ -1,3 +1,5 @@
+from typing import Any
+
 import dico  # noqa
 import dico_command
 import dico_interaction as dico_inter
@@ -14,6 +16,29 @@ def load(bot: ChorokBot) -> None:
 
 def unload(bot: ChorokBot) -> None:
     bot.unload_addons(Default)
+
+
+async def get_node_info(guild_id: dico.Guild.TYPING,
+                        bot: ChorokBot) -> list[str]:
+    if vc := bot.audio.get_vc(guild_id, safe=True):
+        status: dict[str, Any] = vc.Node.getStatus()
+        return [
+            f"**{vc.Node.region}**"
+            f"RAM: {naturalsize(status['UsedMemory'] * 1000000)}/{naturalsize(status['TotalMemory'] * 1000000)}\n"
+            f"스레드 수: {status['Threads']}\n"
+            f"인바운드: {naturalsize(status['NetworkInbound'] * 1000000)}\n"
+            f"아웃바운드: {naturalsize(status['NetworkOutbound'] * 1000000)}\n"
+        ]
+
+    return [
+        f"**{node.region}**\n"
+        f"RAM: {naturalsize(status['UsedMemory'] * 1000000)}/{naturalsize(status['TotalMemory'] * 1000000)}\n"
+        f"스레드 수: {status['Threads']}\n"
+        f"인바운드: {naturalsize(status['NetworkInbound'] * 1000000)}\n"
+        f"아웃바운드: {naturalsize(status['NetworkOutbound'] * 1000000)}\n"
+        for status, node in [(await node.getStatus(), node)
+                             for node in bot.audio.nodes]
+    ]
 
 
 class Default(dico_command.Addon):  # type: ignore[call-arg, misc]
@@ -35,6 +60,10 @@ class Default(dico_command.Addon):  # type: ignore[call-arg, misc]
             f"RAM: {naturalsize(memory.used)}/{naturalsize(memory.total)}",
             inline=False,
         )
+
+        embed.add_field(name="노드",
+                        value="\n".join(await
+                                        get_node_info(ctx.guild_id, self.bot)))
         await ctx.send(embed=embed)
 
     @dico_inter.command(name="ping", description="봇의 명령어 응답 속도를 확인합니다.")
