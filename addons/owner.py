@@ -32,8 +32,8 @@ async def delete_wait(bot: ChorokBot,
     try:
         inter: dico.Interaction = await bot.wait(
             "interaction_create",
-            check=lambda i: int(i.author) == int(ctx.author.user.id) and i.
-            data.custom_id == delete_button.custom_id,
+            check=lambda i: int(i.author) == int(ctx.author.user.id) and i.data
+            .custom_id == delete_button.custom_id,
             timeout=60)
         await inter.message.delete()
     except asyncio.TimeoutError:
@@ -61,6 +61,7 @@ class Owner(dico_command.Addon):  # type: ignore[call-arg, misc]
                         ).owner_ids):
             await ctx.send("이 명령어는 애플리케이션의 오너만 사용할 수 있습니다.", ephemeral=True)
             return
+        await ctx.defer()
         ev = PYEval(ctx, self.bot, code)
         delete_button = dico.Button(style=dico.ButtonStyles.DANGER,
                                     emoji="🗑️",
