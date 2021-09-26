@@ -13,7 +13,6 @@ bot = ChorokBot(
     config=config,
     token=config.token["discord"],
     prefix="",
-    intents=dico.Intents.full(),
     default_allowed_mentions=dico.AllowedMentions(),
 )
 
