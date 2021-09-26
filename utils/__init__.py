@@ -1,1 +1,1 @@
-from . import config, discodo, formatter, koreanbots
+from . import cache, config, discodo, formatter, koreanbots
