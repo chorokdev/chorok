@@ -20,7 +20,7 @@ def unload(bot: ChorokBot) -> None:
     bot.unload_addons(Music)
 
 
-def on_voice_channel(ctx: dico_inter.InteractionContext) -> bool:
+async def on_voice_channel(ctx: dico_inter.InteractionContext) -> bool:
     if isinstance(ctx.author, dico.User):
         ctx.client.loop.create_task(  # noqa
             ctx.send("이 명령어는 초록이 있는 서버에서만 사용할 수 있습니다.", ephemeral=True))
@@ -36,28 +36,28 @@ def on_voice_channel(ctx: dico_inter.InteractionContext) -> bool:
     return True
 
 
-def on_playing(ctx: dico_inter.InteractionContext) -> bool:
-    vc: discodo.VoiceClient = ctx.client.audio.get_vc(ctx.guild_id, safe=True)  # noqa
-    ctx.client.loop.create_task(vc.getCurrent())  # noqa
+async def on_playing(ctx: dico_inter.InteractionContext) -> bool:
+    vc: discodo.VoiceClient = ctx.client.audio.get_vc(ctx.guild_id,
+                                                      safe=True)  # noqa
+    await vc.getCurrent()
 
     if not vc or not vc.current:
-        ctx.client.loop.create_task(  # noqa
-            ctx.send("이 명령어는 노래가 재생 중일 때만 사용하실 수 있습니다.", ephemeral=True))
+        await ctx.send("이 명령어는 노래가 재생 중일 때만 사용하실 수 있습니다.", ephemeral=True)
         return False
     return True
 
 
-def on_same_voice_channel(ctx: dico_inter.InteractionContext) -> bool:
-    vc: discodo.VoiceClient = ctx.client.audio.get_vc(ctx.guild_id, safe=True)  # noqa
+async def on_same_voice_channel(ctx: dico_inter.InteractionContext) -> bool:
+    vc: discodo.VoiceClient = ctx.client.audio.get_vc(ctx.guild_id,
+                                                      safe=True)  # noqa
     if not vc or not ctx.author.user.voice_state:
         return True
 
     if vc.channel_id == ctx.author.user.voice_state.channel_id:
         return True
 
-    ctx.client.loop.create_task(  # noqa
-        ctx.send(f"이 명령어는 <#{vc.channel_id}> 채널에서만 사용하실 수 있습니다.",
-                 ephemeral=True))
+    await ctx.send(f"이 명령어는 <#{vc.channel_id}> 채널에서만 사용하실 수 있습니다.",
+                   ephemeral=True)
     return False
 
 
@@ -75,6 +75,10 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
             self, voice_channel: dico.Channel,
             text_channel_id: dico.Snowflake) -> discodo.VoiceClient:
         vc = await self.bot.audio.connect(voice_channel)
+
+        with contextlib.suppress(Exception):
+            await self.bot.modify_guild_member(voice_channel.guild_id, self.bot.application_id, deaf=True)
+
         await vc.setContext({
             "textChannel": int(text_channel_id),
         })
@@ -205,17 +209,21 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
                                   value=str(index),
                                   description=source.uploader)
                 for index, source in enumerate(data)
-            ])
+            ],
+        )
 
-        await ctx.send("30초 안에 선택하지 않을 경우 취소됩니다.",
-                       ephemeral=True,
-                       components=[dico.ActionRow(data_select)])
+        await ctx.send(
+            "30초 안에 선택하지 않을 경우 취소됩니다.",
+            ephemeral=True,
+            components=[dico.ActionRow(data_select)],
+        )
         try:
             inter: dico.Interaction = await self.bot.wait(
                 "interaction_create",
                 check=lambda i: int(i.author) == int(ctx.author.user.id) and i.
                 data.custom_id == data_select.custom_id,
-                timeout=30)
+                timeout=30,
+            )
             await vc.putSource(data[int(inter.data.values[0])])
             await inter.message.channel.send(embed=dico.Embed(
                 title="대기열에 추가되었습니다.",
@@ -230,7 +238,8 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
                     dico.InteractionCallbackType.UPDATE_MESSAGE,
                     dico.InteractionApplicationCommandCallbackData(
                         content="선택되었습니다.",
-                        components=[dico.ActionRow(data_select)])))
+                        components=[dico.ActionRow(data_select)]),
+                ))
         except asyncio.TimeoutError:
             await (await
                    ctx.request_original_response()).edit(content="취소되었습니다.",
@@ -257,17 +266,21 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
                                   value=str(index),
                                   description=source.uploader)
                 for index, source in enumerate(data)
-            ])
+            ],
+        )
 
-        await ctx.send("30초 안에 선택하지 않을 경우 취소됩니다.",
-                       ephemeral=True,
-                       components=[dico.ActionRow(data_select)])
+        await ctx.send(
+            "30초 안에 선택하지 않을 경우 취소됩니다.",
+            ephemeral=True,
+            components=[dico.ActionRow(data_select)],
+        )
         try:
             inter: dico.Interaction = await self.bot.wait(
                 "interaction_create",
                 check=lambda i: int(i.author) == int(ctx.author.user.id) and i.
                 data.custom_id == data_select.custom_id,
-                timeout=30)
+                timeout=30,
+            )
             await vc.putSource(data[int(inter.data.values[0])])
             await inter.message.channel.send(embed=dico.Embed(
                 title="대기열에 추가되었습니다.",
@@ -282,7 +295,8 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
                     dico.InteractionCallbackType.UPDATE_MESSAGE,
                     dico.InteractionApplicationCommandCallbackData(
                         content="선택되었습니다.",
-                        components=[dico.ActionRow(data_select)])))
+                        components=[dico.ActionRow(data_select)]),
+                ))
         except asyncio.TimeoutError:
             await (await
                    ctx.request_original_response()).edit(content="취소되었습니다.",
@@ -352,6 +366,32 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
             description=f"볼륨을 **{round(vc.volume * 100, 1)}**%로 설정했습니다.",
             colors=Colors.information,
         ))
+
+    @dico_inter.command(
+        name="seek",
+        description="현재 곡에서 해당 위치로 이동합니다.",
+        options=[
+            dico.ApplicationCommandOption(
+                dico.ApplicationCommandOptionType.STRING,
+                "offset",
+                "이동할 위치(00:00)",
+                required=True,
+            )
+        ],
+    )
+    @dico_inter.deco.checks(on_voice_channel, on_playing,
+                            on_same_voice_channel)
+    async def _seek(self, ctx: dico_inter.InteractionContext,
+                    offset: str) -> None:
+        vc: discodo.VoiceClient = self.bot.audio.get_vc(ctx.guild_id)
+
+        await vc.seek(
+            sum([
+                int(value) * (60**index)
+                for index, value in enumerate(reversed(offset))
+            ]))
+        await ctx.send(embed=dico.Embed(description=f"`{offset}` 부분으로 이동했습니다.",
+                                        color=Colors.information))
 
     @dico_inter.command(name="nowplaying", description="현재 재생중인 노래를 확인합니다")
     @dico_inter.deco.checks(on_playing)
