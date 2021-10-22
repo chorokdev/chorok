@@ -1,5 +1,3 @@
-from typing import Any
-
 import dico  # noqa
 import dico_command
 import dico_interaction as dico_inter
@@ -16,29 +14,6 @@ def load(bot: ChorokBot) -> None:
 
 def unload(bot: ChorokBot) -> None:
     bot.unload_addons(Default)
-
-
-async def get_node_info(guild_id: dico.Guild.TYPING,
-                        bot: ChorokBot) -> list[str]:
-    if vc := bot.audio.get_vc(guild_id, safe=True):
-        status: dict[str, Any] = vc.Node.getStatus()
-        return [
-            f"**{vc.Node.region}**"
-            f"RAM: {naturalsize(status['UsedMemory'] * 1000000)}/{naturalsize(status['TotalMemory'] * 1000000)}\n"
-            f"스레드 수: {status['Threads']}\n"
-            f"인바운드: {naturalsize(status['NetworkInbound'] * 1000000)}\n"
-            f"아웃바운드: {naturalsize(status['NetworkOutbound'] * 1000000)}\n"
-        ]
-
-    return [
-        f"**{node.region}**\n"
-        f"RAM: {naturalsize(status['UsedMemory'] * 1000000)}/{naturalsize(status['TotalMemory'] * 1000000)}\n"
-        f"스레드 수: {status['Threads']}\n"
-        f"인바운드: {naturalsize(status['NetworkInbound'] * 1000000)}\n"
-        f"아웃바운드: {naturalsize(status['NetworkOutbound'] * 1000000)}\n"
-        for status, node in [(await node.getStatus(), node)
-                             for node in bot.audio.nodes]
-    ]
 
 
 class Default(dico_command.Addon):  # type: ignore[call-arg, misc]
@@ -61,16 +36,14 @@ class Default(dico_command.Addon):  # type: ignore[call-arg, misc]
             inline=False,
         )
 
-        embed.add_field(name="노드",
-                        value="\n".join(await
-                                        get_node_info(ctx.guild_id, self.bot)))
         await ctx.send(embed=embed)
 
     @dico_inter.command(name="ping", description="봇의 명령어 응답 속도를 확인합니다.")
     async def _ping(self, ctx: dico_inter.InteractionContext) -> None:
         await ctx.send(embed=dico.Embed(
             title="퐁!",
-            description=f"**Discord 게이트웨이:** `{round(self.bot.ping * 1000)}ms`",
+            description=f"**Discord 게이트웨이:** `{round(self.bot.get_shard(ctx.guild_id).ping * 1000)}ms"
+            f"({self.bot.get_shard_id(ctx.guild_id) + 1}호기)`",
             color=Colors.information,
         ))
 
@@ -90,3 +63,23 @@ class Default(dico_command.Addon):  # type: ignore[call-arg, misc]
             description=f"[여기를 눌러](https://discord.gg/P25nShtqFX) 공식 서포트 서버에 입장하실 수 있습니다.",
             color=Colors.information,
         ))
+
+    @dico_inter.command(name="help", description="도움말을 확인합니다.")
+    async def _help(self, ctx: dico_inter.InteractionContext) -> None:
+        embed = dico.Embed(
+            title="도움말",
+            description="자세한 사용 방법은 [여기](https://sslr.notion.site/36732f88e6214ee6af049bce101922fb)를 참고하시기 바랍니다.\n"
+            "`[인자]`는 선택적 인자, `<인자>`는 필수 인자를 뜻합니다.",
+            color=Colors.information)
+
+        for addon in self.bot.addons:
+            embed.add_field(
+                name=addon.name,
+                value="\n".join([
+                    f"**/{command.name}{' ' + ' '.join([('<{}>' if option.required else '[{}]').format(option.name) for option in command.options])}:** `{command.description}`"
+                    for command in map(lambda x: x.command, addon.interactions)
+                    if command.description
+                ]),
+                inline=False)
+
+        await ctx.send(embed=embed)
