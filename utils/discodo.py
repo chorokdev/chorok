@@ -7,9 +7,8 @@ from typing import Any, Optional
 
 import dico  # noqa
 import discodo  # noqa
-from discodo import Nodes  # noqa
-from discodo import (  # noqa
-    EventDispatcher, NodeNotConnected, VoiceClientNotFound)
+from discodo import (EventDispatcher, NodeNotConnected, Nodes,
+                     VoiceClientNotFound)
 from discodo.client.node import Node, launchLocalNode  # noqa
 
 
@@ -28,7 +27,7 @@ class NodeClient(Node):  # type: ignore[call-arg, misc]
     async def close(self) -> None:
         for guildId in self.voiceClients:
             self.loop.create_task(
-                self.client.disconnect(self.client.client.get_guild(guildId)))
+                self.client.disconnect(self.client.client.get(guildId)))
 
 
 class DicoClient:
@@ -77,8 +76,10 @@ class DicoClient:
             )
 
     async def guild_dispatch(self, guild: dico.Guild.TYPING) -> None:
-        if guild.id in self.voice_clients.keys():
-            del self.voice_clients[int(guild.id)]
+        for vc in itertools.chain.from_iterable(
+                [node.voiceClients.values() for node in self.nodes]):
+            if vc.guild_id == guild.id:
+                del vc.Node.voiceClients[guild.id]
 
     def register_node(
         self,
@@ -142,7 +143,6 @@ class DicoClient:
         self.dispatcher.dispatch(event, vc, data)
 
     def get_best_node(self, except_node: discodo.Node = None) -> discodo.Node:
-
         sorted_vc = sorted(
             [node for node in self.nodes if node.is_connected],
             key=lambda n: len(n.voiceClients),
