@@ -1,17 +1,17 @@
 # Discord API wrapper
-dico-api==0.0.22
-dico-interaction==0.0.4
-dico-command==0.0.5
+dico-api @ git+https://github.com/dico-api/dico.git@master
+dico-interaction @ git+https://github.com/dico-api/dico-interaction.git@master
+dico-command @ git+https://github.com/dico-api/dico-command.git@master
 
 # Audio node
 discodo @ git+https://github.com/kijk2869/discodo.git@master
 
 # Extra for dico
 PyNaCl==1.4.0
-aiohttp[speedups]
+aiohttp[speedups]~=3.7.4
 
 # Extra for bot
-rich==10.9.0
+rich==10.12.0
 humanize==3.11.0
 psutil==5.8.0
 aioredis==2.0.0
