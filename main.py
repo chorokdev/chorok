@@ -11,9 +11,11 @@ if not config:
 
 bot = ChorokBot(
     config=config,
-    token=config.token["discord"],
+    token=config["token"]["discord"],
     prefix="",
     default_allowed_mentions=dico.AllowedMentions(),
+    intents=dico.Intents("GUILDS", "GUILD_VOICE_STATES"),
+    monoshard=True,
 )
 
 if __name__ == "__main__":
