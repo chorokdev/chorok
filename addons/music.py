@@ -77,7 +77,9 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
         vc = await self.bot.audio.connect(voice_channel)
 
         with contextlib.suppress(Exception):
-            await self.bot.modify_guild_member(voice_channel.guild_id, self.bot.application_id, deaf=True)
+            await self.bot.modify_guild_member(voice_channel.guild_id,
+                                               self.bot.application_id,
+                                               deaf=True)
 
         await vc.setContext({
             "textChannel": int(text_channel_id),
