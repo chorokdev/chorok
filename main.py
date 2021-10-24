@@ -14,7 +14,7 @@ bot = ChorokBot(
     token=config["token"]["discord"],
     prefix="",
     default_allowed_mentions=dico.AllowedMentions(),
-    intents=dico.Intents("GUILDS", "GUILD_VOICE_STATES"),
+    intents=dico.Intents("GUILD_VOICE_STATES"),
     monoshard=True,
 )
 
