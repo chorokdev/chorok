@@ -76,11 +76,12 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
     async def connect_voice(
             self, guild_id: dico.Snowflake, voice_channel: dico.Snowflake,
             text_channel_id: dico.Snowflake) -> discodo.VoiceClient:
-        vc = await self.bot.audio.connect(voice_channel)
+        vc = await self.bot.audio.connect(guild_id, voice_channel)
 
         with contextlib.suppress(Exception):
             await self.bot.modify_guild_member(guild_id,
                                                self.bot.application_id,
+                                               mute=False,
                                                deaf=True)
 
         await vc.setContext({
@@ -345,7 +346,7 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
     @dico_inter.command(name="stop", description="대기열을 초기화하고 음성 채널에서 나갑니다.")
     @dico_inter.deco.checks(on_voice_channel)
     async def _stop(self, ctx: dico_inter.InteractionContext) -> None:
-        await self.bot.audio.destroy(ctx.guild_id)
+        await self.bot.audio.get_vc(ctx.guild_id).destroy()
         await ctx.send(embed=dico.Embed(
             description="대기열을 초기화하고 음성 채널에서 나갔습니다.", color=Colors.information))
 

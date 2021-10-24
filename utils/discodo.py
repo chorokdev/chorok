@@ -17,17 +17,16 @@ class NodeClient(Node):  # type: ignore[call-arg, misc]
         await super().onResumed(data)
 
         for guild_id, vc_data in data["voice_clients"].items():
-            guild = self.client.client.get(int(guild_id))
             if "channel" in vc_data and vc_data["channel"]:
-                channel = self.client.client.get(int(vc_data["channel"]))
-                self.loop.create_task(self.client.connect(channel, self))
+                channel = int(vc_data["channel"])
+                self.loop.create_task(self.client.connect(guild_id, channel, self))
             else:
-                self.loop.create_task(self.client.disconnect(guild))
+                self.loop.create_task(self.client.disconnect(guild_id))
 
     async def close(self) -> None:
-        for guildId in self.voiceClients:
+        for guild_id in self.voiceClients:
             self.loop.create_task(
-                self.client.disconnect(self.client.client.get(guildId)))
+                self.client.disconnect(self.client.client.get(guild_id)))
 
 
 class DicoClient:
@@ -118,17 +117,14 @@ class DicoClient:
         node.dispatcher.onAny(self._on_any_node_event)
 
     async def _on_vc_destroyed(self, data: dict[str, Any]) -> None:
-        guild = self.client.get(int(data["guild_id"]), storage_type="guild")
-
-        await self.client.update_voice_state(guild)
+        await self.client.update_voice_state(data["guild_id"])
 
     async def _on_any_node_event(self, event: str, data: dict[str,
                                                               Any]) -> None:
         if not isinstance(data, dict) or "guild_id" not in data:
             return
 
-        guild = self.client.get_guild(int(data["guild_id"]))
-        vc = self.get_vc(guild, safe=True)
+        vc = self.get_vc(data["guild_id"], safe=True)
 
         if not vc:
             return
@@ -169,10 +165,23 @@ class DicoClient:
 
     async def connect(
             self,
+            guild: dico.Guild.TYPING,
             channel: dico.Channel.TYPING,
             node: Optional[NodeClient] = None) -> discodo.VoiceClient:
-        if not hasattr(channel, "guild"):
+        if not isinstance(channel, (int, str, dico.Snowflake, dico.Channel)):
             raise ValueError
+        if not isinstance(guild, (int, str, dico.Snowflake, dico.Channel)):
+            raise ValueError
+
+        if hasattr(channel, "id"):
+            channel = int(channel.id)
+        elif isinstance(channel, str):
+            channel = int(channel)
+
+        if hasattr(guild, "id"):
+            guild = int(guild.id)
+        elif isinstance(guild, str):
+            guild = int(guild)
 
         if not node:
             if not self.get_best_node():
@@ -180,9 +189,9 @@ class DicoClient:
 
             node = self.get_best_node()
 
-        self.guild_reservation_map[int(channel.guild_id)] = node
+        self.guild_reservation_map[guild] = node
 
-        vc = self.get_vc(channel.guild, safe=True)
+        vc = self.get_vc(guild, safe=True)
 
         if vc and vc.Node != node:
             await vc.destroy()
@@ -190,25 +199,33 @@ class DicoClient:
         task = (self.loop.create_task(
             self.dispatcher.wait_for(
                 "VC_CREATED",
-                lambda _, data: int(data["guild_id"]) == channel.guild_id,
+                lambda _, data: int(data["guild_id"]) == guild,
                 timeout=10.0,
             )) if not vc or vc.Node != node else None)
 
-        await self.client.update_voice_state(channel.guild, channel)
+        await self.client.update_voice_state(guild, channel)
 
         if task:
             vc, _ = await task
 
-        if self.guild_reservation_map.get(int(channel.guild.id)) == node:
-            del self.guild_reservation_map[int(channel.guild.id)]
+        if self.guild_reservation_map.get(int(guild)) == node:
+            del self.guild_reservation_map[int(guild)]
 
         return vc
 
-    async def disconnect(self, guild: dico.Guild) -> None:
-        await self.client.update_voice_state(guild)
+    async def disconnect(self, guild: dico.Guild.TYPING) -> None:
+        if not isinstance(guild, (int, str, dico.Snowflake, dico.Channel)):
+            raise ValueError
 
-    async def destroy(self, guild: dico.Guild) -> None:
+        if hasattr(guild, "id"):
+            guild = int(guild.id)
+        elif isinstance(guild, str):
+            guild = int(guild)
+
+        await self.client.update_voice_state(guild.id)
+
+    async def destroy(self, guild: dico.Guild.TYPING) -> None:
         vc: discodo.VoiceClient = self.get_vc(guild.id)
 
-        await self.client.update_voice_state(guild)
+        await self.client.update_voice_state(guild.id)
         await vc.destroy()
