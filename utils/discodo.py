@@ -42,7 +42,6 @@ class DicoClient:
         self.nodes = Nodes()
 
         self.client.on_("raw", self.discord_dispatch)
-        self.client.on_("guild_delete", self.guild_dispatch)
 
     def __repr__(self) -> str:
         return (
@@ -74,12 +73,6 @@ class DicoClient:
                 nodes_task,
                 return_when="ALL_COMPLETED",
             )
-
-    async def guild_dispatch(self, guild: dico.Guild.TYPING) -> None:
-        for vc in itertools.chain.from_iterable(
-                [node.voiceClients.values() for node in self.nodes]):
-            if vc.guild_id == guild.id:
-                del vc.Node.voiceClients[guild.id]
 
     def register_node(
         self,

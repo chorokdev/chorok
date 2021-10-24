@@ -67,9 +67,11 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
 
     def on_load(self) -> None:
         self.bot.audio.dispatcher.on("SOURCE_START", self.send_next_source)
+        self.bot.audio.dispatcher.on("SOURCE_END", self.set_loop)
 
     def on_unload(self) -> None:
         self.bot.audio.dispatcher.off("SOURCE_START", self.send_next_source)
+        self.bot.audio.dispatcher.off("SOURCE_END", self.set_loop)
 
     async def connect_voice(
             self, voice_channel: dico.Channel,
@@ -101,6 +103,10 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
         ))
         voice.context["lastMessage"] = int(message.id)
         await voice.setContext(voice.context)
+
+    async def set_loop(self, voice: discodo.VoiceClient, data: dict[str, Any]) -> None:
+        if voice.context.get("loop", False):
+            await voice.loadSource(data["source"]["webpage_url"])
 
     @dico_inter.command(name="join", description="음성 채널에 입장합니다.")
     @dico_inter.deco.checks(on_voice_channel)
@@ -467,6 +473,22 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
 
         await ctx.send(embed=dico.Embed(
             description=f"자동 재생을 {'켰' if vc.autoplay else '껐'}습니다.",
+            color=Colors.information,
+        ))
+
+    @dico_inter.command(name="loop", description="대기열 전체 반복을 켜거나 끕니다.")
+    @dico_inter.checks(on_voice_channel, on_playing, on_same_voice_channel)
+    async def _loop(self, ctx: dico_inter.InteractionContext) -> None:
+        vc: discodo.VoiceClient = self.bot.audio.get_vc(ctx.guild_id)
+
+        if vc.context.get("loop", False):
+            vc.context["loop"] = False
+        else:
+            vc.context["loop"] = True
+        await vc.setContext(vc.context)
+
+        await ctx.send(embed=dico.Embed(
+            description=f"대기열 반복을 {'켰' if vc.context['loop'] else '껐'}습니다.",
             color=Colors.information,
         ))
 

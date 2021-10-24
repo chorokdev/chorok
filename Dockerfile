@@ -11,4 +11,4 @@ COPY . .
 RUN mv config.inc.json config.json
 RUN python3 -m pip install -U pip && python3 -m pip install -r requirements.txt
 
-CMD ["python3", "main.py", "production"]
+ENTRYPOINT ["python3", "main.py", "production"]

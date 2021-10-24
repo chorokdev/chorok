@@ -33,7 +33,7 @@ class ChorokBot(Bot):  # type: ignore[call-arg, misc]
     def __init__(self, config: dict[str, Any], *args: Any,
                  **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        dico_inter.InteractionClient(client=self)
+        dico_inter.InteractionClient(client=self, auto_register_commands=True)
 
         self.config: dict[str, Any] = config
         self.bot_logger = logging.getLogger("bot")
