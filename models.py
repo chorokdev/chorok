@@ -55,6 +55,7 @@ class ChorokBot(Bot):  # type: ignore[call-arg, misc]
             )
 
         self.on_("ready", self._ready_handler)
+        self.on_("shards_ready", self._shards_ready_handler)
         self.on_("voice_state_update", self._voice_state_update_handler)
         self.on_("interaction_error", self._interaction_error_handler)
 
@@ -73,21 +74,22 @@ class ChorokBot(Bot):  # type: ignore[call-arg, misc]
                         f"skipping invalid module 'addons/{filename}'")
                     continue
 
-    async def _ready_handler(self, ready: dico.Ready) -> None:
+    async def _shards_ready_handler(self) -> None:
+        user = await self.request_user()
         self.bot_logger.info(
-            f"logged in as '{ready.user}' and can see {ready.guild_count} guilds and {len(self.shards)} shards"
+            f"logged in as '{user}' and can see {self.guild_count} guilds and {self.shard_count} shards"
         )
         self.load_modules()
 
-        for index, shard in enumerate(self.shards):
-            await shard.update_presence(activities=[
-                dico.Activity(
-                    name=f"/help, {index + 1}호기",
-                    activity_type=dico.ActivityTypes.LISTENING).to_dict()
-            ],
-                status="online",
-                afk=False,
-                since=None)
+    async def _ready_handler(self, ready: dico.Ready):
+        self.bot_logger.info(f"shard {ready.shard_id} is ready")
+        await self.shards[ready.shard_id].update_presence(activities=[
+            dico.Activity(activity_type=dico.ActivityTypes.LISTENING,
+                          name=f"/help, {ready.shard_id + 1}호기").to_dict()
+        ],
+            since=None,
+            status="online",
+            afk=False)
 
     async def _interaction_error_handler(  # noqa
             self, ctx: dico_inter.InteractionContext,
