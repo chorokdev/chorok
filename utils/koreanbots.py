@@ -31,9 +31,8 @@ class KoreanbotsClient:
             resp.raise_for_status()
 
     def post_guilds_automatically(self) -> None:
-        await self.client.wait_ready()
-
         async def async_callback() -> None:
+            await self.client.wait_ready()
             while True:
                 with contextlib.suppress(Exception):
                     await self.post_guilds()
