@@ -81,7 +81,7 @@ class ChorokBot(Bot):  # type: ignore[call-arg, misc]
         )
         self.load_modules()
 
-    async def _ready_handler(self, ready: dico.Ready):
+    async def _ready_handler(self, ready: dico.Ready) -> None:
         self.bot_logger.info(f"shard {ready.shard_id} is ready")
         await self.shards[ready.shard_id].update_presence(activities=[
             dico.Activity(activity_type=dico.ActivityTypes.LISTENING,

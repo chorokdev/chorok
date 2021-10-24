@@ -104,7 +104,8 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
         voice.context["lastMessage"] = int(message.id)
         await voice.setContext(voice.context)
 
-    async def set_loop(self, voice: discodo.VoiceClient, data: dict[str, Any]) -> None:
+    async def set_loop(self, voice: discodo.VoiceClient,
+                       data: dict[str, Any]) -> None:
         if voice.context.get("loop", False):
             await voice.loadSource(data["source"]["webpage_url"])
 
@@ -451,7 +452,7 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
                 f"**{idx + 1}.** [{item.title}]({item.webpage_url})"
                 for idx, item in enumerate(vc.Queue)
             ],
-            1024,
+            4096,
         )
         embeds: list[dico.Embed] = [
             dico.Embed(

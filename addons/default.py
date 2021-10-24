@@ -77,7 +77,7 @@ class Default(dico_command.Addon):  # type: ignore[call-arg, misc]
                 name=addon.name,
                 value="\n".join([
                     f"**/{command.name}{' ' + ' '.join([('<{}>' if option.required else '[{}]').format(option.name) for option in command.options])}:** `{command.description}`"
-                    for command in map(lambda x: x.command, addon.interactions)
+                    for command in [inter.command for inter in addon.interactions]
                     if command.description
                 ]),
                 inline=False)
