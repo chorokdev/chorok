@@ -74,12 +74,12 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
         self.bot.audio.dispatcher.off("SOURCE_END", self.set_loop)
 
     async def connect_voice(
-            self, voice_channel: dico.Channel,
+            self, guild_id: dico.Snowflake, voice_channel: dico.Snowflake,
             text_channel_id: dico.Snowflake) -> discodo.VoiceClient:
         vc = await self.bot.audio.connect(voice_channel)
 
         with contextlib.suppress(Exception):
-            await self.bot.modify_guild_member(voice_channel.guild_id,
+            await self.bot.modify_guild_member(guild_id,
                                                self.bot.application_id,
                                                deaf=True)
 
@@ -91,16 +91,17 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
 
     async def send_next_source(self, voice: discodo.VoiceClient,
                                data: dict[str, Any]) -> None:
-        channel: dico.Channel = self.bot.get(voice.context["textChannel"],
-                                             storage_type="channel")
         with contextlib.suppress(Exception):
-            await self.bot.delete_message(channel,
+            await self.bot.delete_message(voice.context["textChannel"],
                                           voice.context["lastMessage"])
-        message: dico.Message = await channel.send(embed=dico.Embed(
-            title="현재 재생 중" if not data["source"]["related"] else "추천 영상 재생 중",
-            description=f"[{data['source']['title']}]({data['source']['webpage_url']})",
-            color=Colors.default,
-        ))
+        message: dico.Message = await self.bot.create_message(
+            channel=voice.context["textChannel"],
+            embed=dico.Embed(
+                title="현재 재생 중"
+                if not data["source"]["related"] else "추천 영상 재생 중",
+                description=f"[{data['source']['title']}]({data['source']['webpage_url']})",
+                color=Colors.default,
+            ))
         voice.context["lastMessage"] = int(message.id)
         await voice.setContext(voice.context)
 
@@ -114,7 +115,8 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
     async def _join(self, ctx: dico_inter.InteractionContext) -> None:
         await ctx.defer()
 
-        await self.connect_voice(ctx.author.user.voice_state.channel,
+        await self.connect_voice(ctx.guild_id,
+                                 ctx.author.user.voice_state.channel_id,
                                  ctx.channel_id)
         await ctx.send(embed=dico.Embed(
             description=f"{ctx.author.user.voice_state.channel.mention}에 입장했습니다.",
@@ -138,8 +140,9 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
         vc: discodo.VoiceClient = self.bot.audio.get_vc(ctx.guild_id,
                                                         safe=True)
         if not vc:
-            vc = await self.connect_voice(ctx.author.user.voice_state.channel,
-                                          ctx.channel_id)
+            vc = await self.connect_voice(
+                ctx.guild_id, ctx.author.user.voice_state.channel_id,
+                ctx.channel_id)
 
         data: Union[AudioData, list[AudioData]] = await vc.loadSource(query)
 
@@ -170,7 +173,8 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
 
         if not vc:
             vc = await self.connect_voice(
-                ctx.target.author.voice_state.channel, ctx.channel_id)
+                ctx.guild_id, ctx.target.author.voice_state.channel_id,
+                ctx.channel_id)
 
         data: Union[AudioData,
                     list[AudioData]] = await vc.loadSource(ctx.target.content)
@@ -207,12 +211,13 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
         vc: discodo.VoiceClient = self.bot.audio.get_vc(ctx.guild_id,
                                                         safe=True)
         if not vc:
-            vc = await self.connect_voice(ctx.author.user.voice_state.channel,
-                                          ctx.channel_id)
+            vc = await self.connect_voice(
+                ctx.guild_id, ctx.author.user.voice_state.channel_id,
+                ctx.channel_id)
 
         data: list[AudioData] = await vc.searchSources(query)
         data_select = dico.SelectMenu(
-            custom_id=f"{ctx.guild_id}_{ctx.author.user.id}",
+            custom_id=f"{ctx.guild_id}_{ctx.channel_id}_{ctx.author.user.id}",
             options=[
                 dico.SelectOption(label=source.title,
                                   value=str(index),
@@ -264,12 +269,13 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
         vc: discodo.VoiceClient = self.bot.audio.get_vc(ctx.guild_id,
                                                         safe=True)
         if not vc:
-            vc = await self.connect_voice(ctx.author.user.voice_state.channel,
-                                          ctx.channel_id)
+            vc = await self.connect_voice(
+                ctx.guild_id, ctx.author.user.voice_state.channel_id,
+                ctx.channel_id)
 
         data: list[AudioData] = await vc.searchSources(ctx.target.content)
         data_select = dico.SelectMenu(
-            custom_id=f"{ctx.guild_id}_{ctx.author.user.id}",
+            custom_id=f"{ctx.guild_id}_{ctx.channel_id}_{ctx.author.user.id}",
             options=[
                 dico.SelectOption(label=source.title,
                                   value=str(index),
@@ -456,7 +462,7 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
         )
         embeds: list[dico.Embed] = [
             dico.Embed(
-                title=f"{self.bot.get(ctx.guild_id).name}의 대기열",
+                title=f"서버 대기열",
                 description="\n".join(page),
                 color=Colors.information,
             ) for page in formatted_queue
