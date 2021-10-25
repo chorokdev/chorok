@@ -489,10 +489,10 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
     async def _loop(self, ctx: dico_inter.InteractionContext) -> None:
         vc: discodo.VoiceClient = self.bot.audio.get_vc(ctx.guild_id)
 
-        if not vc.context.get("loop", False):
-            vc.context["loop"] = True
-        else:
+        if vc.context.get("loop", False):
             vc.context["loop"] = False
+        else:
+            vc.context["loop"] = True
         await vc.setContext(vc.context)
 
         await ctx.send(embed=dico.Embed(
