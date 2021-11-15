@@ -67,11 +67,11 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
 
     def on_load(self) -> None:
         self.bot.audio.dispatcher.on("SOURCE_START", self.send_next_source)
-        self.bot.audio.dispatcher.on("SOURCE_END", self.set_loop)
+        self.bot.audio.dispatcher.on("SOURCE_STOP", self.set_loop)
 
     def on_unload(self) -> None:
         self.bot.audio.dispatcher.off("SOURCE_START", self.send_next_source)
-        self.bot.audio.dispatcher.off("SOURCE_END", self.set_loop)
+        self.bot.audio.dispatcher.off("SOURCE_STOP", self.set_loop)
 
     async def connect_voice(
             self, guild_id: dico.Snowflake, voice_channel: dico.Snowflake,
@@ -451,7 +451,7 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
         vc: discodo.VoiceClient = self.bot.audio.get_vc(ctx.guild_id)
 
         if not vc.Queue:
-            await self._nowplaying.coro(ctx)
+            await self._nowplaying.coro(self, ctx)
             return
 
         formatted_queue = create_page(
