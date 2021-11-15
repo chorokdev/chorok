@@ -25,7 +25,7 @@ async def on_voice_channel(ctx: dico_inter.InteractionContext) -> bool:
         ctx.client.loop.create_task(  # noqa
             ctx.send("이 명령어는 초록이 있는 서버에서만 사용할 수 있습니다.", ephemeral=True))
         return False
-    if not bool(ctx.author.user.voice_state):
+    if not bool(ctx.author.user.voice_state) or not bool(ctx.author.user.voice_state.channel_id):
         ctx.client.loop.create_task(  # noqa
             ctx.send(
                 "이 명령어는 음성 채널에서만 사용할 수 있습니다.\n"
