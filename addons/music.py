@@ -428,8 +428,8 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
                 ))
             chapter = chapters[0] if chapters else None
             chapter_str = (
-                f"**{chapter['title']}** " if chapter else ""
-                f"`[{duration_format(chapter['start_time'])} ~ {duration_format(chapter['end_time'])}]`\n\n"
+                f"**{chapter['title']}** "
+                f"`[{duration_format(chapter['start_time'])} ~ {duration_format(chapter['end_time'])}]`\n\n" if chapter else ""
             )
             progress_bar = (
                 f"{make_progress_bar(vc.position, vc.duration)} "
