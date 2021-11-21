@@ -19,7 +19,8 @@ class NodeClient(Node):  # type: ignore[call-arg, misc]
         for guild_id, vc_data in data["voice_clients"].items():
             if "channel" in vc_data and vc_data["channel"]:
                 channel = int(vc_data["channel"])
-                self.loop.create_task(self.client.connect(guild_id, channel, self))
+                self.loop.create_task(
+                    self.client.connect(guild_id, channel, self))
             else:
                 self.loop.create_task(self.client.disconnect(guild_id))
 
