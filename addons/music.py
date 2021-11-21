@@ -25,7 +25,8 @@ async def on_voice_channel(ctx: dico_inter.InteractionContext) -> bool:
         ctx.client.loop.create_task(  # noqa
             ctx.send("이 명령어는 초록이 있는 서버에서만 사용할 수 있습니다.", ephemeral=True))
         return False
-    if not bool(ctx.author.user.voice_state) or not bool(ctx.author.user.voice_state.channel_id):
+    if not bool(ctx.author.user.voice_state) or not bool(
+            ctx.author.user.voice_state.channel_id):
         ctx.client.loop.create_task(  # noqa
             ctx.send(
                 "이 명령어는 음성 채널에서만 사용할 수 있습니다.\n"
@@ -56,7 +57,7 @@ async def on_same_voice_channel(ctx: dico_inter.InteractionContext) -> bool:
     if vc.channel_id == ctx.author.user.voice_state.channel_id:
         return True
 
-    await ctx.send(f"이 명령어는 <#{vc.channel_id}> 채널에서만 사용하실 수 있습니다.",
+    await ctx.send(f"이 명령어는 <#{vc.channel_id}>에서만 사용하실 수 있습니다.",
                    ephemeral=True)
     return False
 
@@ -103,7 +104,7 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
                 description=f"[{data['source']['title']}]({data['source']['webpage_url']})",
                 color=Colors.default,
             ))
-        voice.context["lastMessage"] = int(message.id)
+        voice.context["lastMessage"] = str(message.id)
         await voice.setContext(voice.context)
 
     async def set_loop(self, voice: discodo.VoiceClient,
@@ -120,7 +121,7 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
                                  ctx.author.user.voice_state.channel_id,
                                  ctx.channel_id)
         await ctx.send(embed=dico.Embed(
-            description=f"{ctx.author.user.voice_state.channel.mention}에 입장했습니다.",
+            description=f"<#{ctx.author.user.voice_state.channel_id}>에 입장했습니다.",
             color=Colors.information,
         ))
 
@@ -344,7 +345,7 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
         ))
 
     @dico_inter.command(name="stop", description="대기열을 초기화하고 음성 채널에서 나갑니다.")
-    @dico_inter.deco.checks(on_voice_channel)
+    @dico_inter.deco.checks(on_voice_channel, on_same_voice_channel)
     async def _stop(self, ctx: dico_inter.InteractionContext) -> None:
         await self.bot.audio.get_vc(ctx.guild_id).destroy()
         await ctx.send(embed=dico.Embed(
@@ -427,8 +428,9 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
                 ))
             chapter = chapters[0] if chapters else None
             chapter_str = (
-                f"\n\n`[{duration_format(chapter['start_time'])} ~ {duration_format(chapter['end_time'])}]`"
-                f" **{chapter['title']}**" if chapter else "")
+                f"**{chapter['title']}** " if chapter else ""
+                f"`[{duration_format(chapter['start_time'])} ~ {duration_format(chapter['end_time'])}]`\n\n"
+            )
             progress_bar = (
                 f"{make_progress_bar(vc.position, vc.duration)} "
                 f"`[{duration_format(vc.position)}/{duration_format(vc.duration)}]`"
@@ -470,6 +472,24 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
         ]
 
         await ctx.send(embeds=embeds)
+
+    @dico_inter.command(name="remove",
+                        description="대기열에서 해당 인덱스의 곡을 삭제합니다.",
+                        options=[
+                            dico.ApplicationCommandOption(
+                                dico.ApplicationCommandOptionType.NUMBER,
+                                "index", "삭제할 곡의 인덱스", True)
+                        ])
+    async def _remove(self, ctx: dico_inter.InteractionContext,
+                      index: int) -> None:
+        vc: discodo.VoiceClient = self.bot.audio.get_vc(ctx.guild_id)
+
+        with contextlib.suppress(Exception):
+            data: discodo.AudioData = vc.Queue[index - 1]
+            await vc.Queue[index - 1].remove()
+            await ctx.send(embed=dico.Embed(
+                description=f"[{data.title}]({data.webpage_url})을(를) 삭제했습니다.",
+                color=Colors.information))
 
     @dico_inter.command(name="autoplay", description="자동 재생을 켜거나 끕니다.")
     @dico_inter.deco.checks(on_voice_channel, on_playing,
