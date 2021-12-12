@@ -33,5 +33,5 @@
 4. run bot with `python(3.*) main.py <mode>`
 
 ## Thanks to
-eunwoo1004: [dico](https://github.com/dico-api/dico) library developer
-fxrcha: Web designer
+[eunwoo1004](https://github.com/eunwoo1104): Maintainer of [dico](https://github.com/dico-api/dico)  
+[fxrcha](https://github.com/fxrcha): Designer of web dashboard(comming soon)
