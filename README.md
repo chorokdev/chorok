@@ -34,4 +34,4 @@
 
 ## Thanks to
 [eunwoo1004](https://github.com/eunwoo1104): Maintainer of [dico](https://github.com/dico-api/dico)  
-[fxrcha](https://github.com/fxrcha): Designer of web dashboard(comming soon)
+[fxrcha](https://github.com/fxrcha): Designer of web dashboard(coming soon)
