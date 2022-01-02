@@ -79,8 +79,8 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
             text_channel_id: dico.Snowflake) -> discodo.VoiceClient:
         try:
             vc = await self.bot.audio.connect(guild_id, voice_channel)
-        except NodeNotConnected:
-            await self.bot.audio.Nodes[0].connect()
+        except discodo.NodeNotConnected:
+            await self.bot.audio.nodes[0].connect()
             vc = await self.bot.audio.connect(guild_id, voice_channel)
 
         with contextlib.suppress(Exception):
