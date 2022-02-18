@@ -1,5 +1,6 @@
 import asyncio
 import contextlib
+from http.client import HTTPException
 from typing import Any, Optional, Union
 
 import dico  # noqa
@@ -145,12 +146,13 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
 
         vc: discodo.VoiceClient = self.bot.audio.get_vc(ctx.guild_id,
                                                         safe=True)
-        if not vc:
+        try:
+            data: Union[AudioData, list[AudioData]] = await vc.loadSource(query)
+        except discodo.HTTPException:
             vc = await self.connect_voice(
                 ctx.guild_id, ctx.author.user.voice_state.channel_id,
                 ctx.channel_id)
-
-        data: Union[AudioData, list[AudioData]] = await vc.loadSource(query)
+            data: Union[AudioData, list[AudioData]] = await vc.loadSource(query)
 
         if isinstance(data, list):
             embed = dico.Embed(
@@ -177,13 +179,13 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
         vc: discodo.VoiceClient = self.bot.audio.get_vc(ctx.guild_id,
                                                         safe=True)
 
-        if not vc:
+        try:
+            data: Union[AudioData, list[AudioData]] = await vc.loadSource(ctx.target.content)
+        except discodo.HTTPException:
             vc = await self.connect_voice(
-                ctx.guild_id, ctx.target.author.voice_state.channel_id,
+                ctx.guild_id, ctx.author.user.voice_state.channel_id,
                 ctx.channel_id)
-
-        data: Union[AudioData,
-                    list[AudioData]] = await vc.loadSource(ctx.target.content)
+            data: Union[AudioData, list[AudioData]] = await vc.loadSource(ctx.target.content)
 
         if isinstance(data, list):
             embed = dico.Embed(
@@ -216,12 +218,13 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
 
         vc: discodo.VoiceClient = self.bot.audio.get_vc(ctx.guild_id,
                                                         safe=True)
-        if not vc:
+        try:
+            data: Union[AudioData, list[AudioData]] = await vc.loadSource(query)
+        except discodo.HTTPException:
             vc = await self.connect_voice(
                 ctx.guild_id, ctx.author.user.voice_state.channel_id,
                 ctx.channel_id)
-
-        data: list[AudioData] = await vc.searchSources(query)
+            data: Union[AudioData, list[AudioData]] = await vc.searchSources(query)
         data_select = dico.SelectMenu(
             custom_id=f"{ctx.guild_id}_{ctx.channel_id}_{ctx.author.user.id}",
             options=[
@@ -279,7 +282,13 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
                 ctx.guild_id, ctx.author.user.voice_state.channel_id,
                 ctx.channel_id)
 
-        data: list[AudioData] = await vc.searchSources(ctx.target.content)
+        try:
+            data: Union[AudioData, list[AudioData]] = await vc.loadSource(ctx.target.content)
+        except discodo.HTTPException:
+            vc = await self.connect_voice(
+                ctx.guild_id, ctx.author.user.voice_state.channel_id,
+                ctx.channel_id)
+            data: Union[AudioData, list[AudioData]] = await vc.searchSources(ctx.target.content)
         data_select = dico.SelectMenu(
             custom_id=f"{ctx.guild_id}_{ctx.channel_id}_{ctx.author.user.id}",
             options=[
@@ -409,7 +418,7 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
         await vc.seek(
             sum([
                 int(value) * (60**index)
-                for index, value in enumerate(reversed(offset))
+                for index, value in enumerate(reversed(offset.split(":")))
             ]))
         await ctx.send(embed=dico.Embed(description=f"`{offset}` 부분으로 이동했습니다.",
                                         color=Colors.information))
