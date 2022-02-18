@@ -8,7 +8,7 @@ discodo @ git+https://github.com/kijk2869/discodo.git@master
 
 # Extra for dico
 PyNaCl==1.4.0
-aiohttp[speedups]~=3.7.4
+aiohttp[speedups]>=3.8.0
 
 # Extra for bot
 rich==10.12.0
