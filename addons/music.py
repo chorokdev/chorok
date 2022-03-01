@@ -146,6 +146,10 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
 
         vc: discodo.VoiceClient = self.bot.audio.get_vc(ctx.guild_id,
                                                         safe=True)
+        if not vc:
+            vc = await self.connect_voice(
+                ctx.guild_id, ctx.author.user.voice_state.channel_id,
+                ctx.channel_id)
         try:
             data: Union[AudioData, list[AudioData]] = await vc.loadSource(query)
         except discodo.HTTPException:
@@ -178,7 +182,10 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
 
         vc: discodo.VoiceClient = self.bot.audio.get_vc(ctx.guild_id,
                                                         safe=True)
-
+        if not vc:
+            vc = await self.connect_voice(
+                ctx.guild_id, ctx.author.user.voice_state.channel_id,
+                ctx.channel_id)
         try:
             data: Union[AudioData, list[AudioData]] = await vc.loadSource(ctx.target.content)
         except discodo.HTTPException:
@@ -218,6 +225,10 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
 
         vc: discodo.VoiceClient = self.bot.audio.get_vc(ctx.guild_id,
                                                         safe=True)
+        if not vc:
+            vc = await self.connect_voice(
+                ctx.guild_id, ctx.author.user.voice_state.channel_id,
+                ctx.channel_id)
         try:
             data: Union[AudioData, list[AudioData]] = await vc.loadSource(query)
         except discodo.HTTPException:
@@ -281,7 +292,6 @@ class Music(dico_command.Addon):  # type: ignore[call-arg, misc]
             vc = await self.connect_voice(
                 ctx.guild_id, ctx.author.user.voice_state.channel_id,
                 ctx.channel_id)
-
         try:
             data: Union[AudioData, list[AudioData]] = await vc.loadSource(ctx.target.content)
         except discodo.HTTPException:
