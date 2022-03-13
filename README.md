@@ -1,5 +1,8 @@
 # Chorok - High quality Discord music bot
 
+## Goodbye!
+I know it and its node has so many bug. So I decided to develop v3 in private. 
+
 ## Config guide
 ```json5
 {
